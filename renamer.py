@@ -6,7 +6,7 @@ import os
 import shutil
 import re
 
-VALID_FILE_EXTENSIONS = ["avi", "mkv", "mpg", "mp4", "ogm", "mov"]
+VALID_FILE_EXTENSIONS = ("*.avi", "*.mkv", "*.mpg", "*.mp4", "*.ogm", "*.mov")
 CONFIG_FILE = "renamer.cfg"
 
 def parse_config(s):
@@ -33,30 +33,25 @@ finally:
 config = parse_config(config_data)
 
 # Check files
-files_found = dict([(f, None) for f in os.listdir(config["path_to_watch"])])
-
-for filename in files_found:
-    old_file_path = os.path.join(config["path_to_watch"], filename)
-                
-    p = re.compile(".*\.(?P<file_extension>[a-zA-Z0-9]+)$", re.IGNORECASE)
-    m = p.match(filename)
+for root, dirs, files in os.walk(config["path_to_watch"]):
+    for extension in VALID_FILE_EXTENSIONS:
+        for filename in fnmatch.filter(files, extension):
+            old_file_path = os.path.join(root, filename)
+            ep = episode.Episode()
+            try:
+                ep.parse_filename(filename)
+                ep.get_episode_name()
     
-    if m and m.group('file_extension') in VALID_FILE_EXTENSIONS:
-        ep = episode.Episode()
-        try:
-            ep.parse_filename(filename)
-            ep.get_episode_name()
+                new_file_path = os.path.join(config["destination_path"], ep.create_file_path(config["output_format"]))
+                new_file_dir = os.path.dirname(new_file_path)
+        
+                if not os.path.exists(new_file_dir):
+                    os.makedirs(new_file_dir)
     
-            new_file_path = os.path.join(config["destination_path"], ep.create_file_path(config["output_format"]))
-            new_file_dir = os.path.dirname(new_file_path)
-    
-            if not os.path.exists(new_file_dir):
-                os.makedirs(new_file_dir)
-    
-            shutil.move(old_file_path, new_file_path)
+                shutil.move(old_file_path, new_file_path)
             
-            print "Moved " + old_file_path + " => " + new_file_path
-        except episode.ParserError:
-            print "Ignoring unparseable filename (%s)" % filename
-        except episode.LookupError:
-            print "Error: Couldn't find episode in tv database"
+                print "Moved " + old_file_path + " => " + new_file_path
+            except episode.ParserError:
+                print "Ignoring unparseable filename (%s)" % filename
+            except episode.LookupError:
+                print "Error: Couldn't find episode in tv database"
