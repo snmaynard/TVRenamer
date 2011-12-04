@@ -1,12 +1,13 @@
 #!/usr/bin/python
 
+import fnmatch
 import time
 import episode
 import os
 import shutil
 import re
 
-VALID_FILE_EXTENSIONS = ("*.avi", "*.mkv", "*.mpg", "*.mp4", "*.ogm", "*.mov")
+VALID_FILE_EXTENSIONS = ("*.avi", "*.mpg", "*.mp4", "*.ogm", "*.mov")
 CONFIG_FILE = "renamer.cfg"
 
 def parse_config(s):
